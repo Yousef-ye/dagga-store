@@ -76,15 +76,27 @@ elif menu == "تسجيل مبيعات":
         st.warning("لا توجد بضاعة في المخزن حالياً.")
 
 elif menu == "🗑️ حذف صنف":
-    st.subheader("🗑️ حذف صنف من المخزن")
+    st.subheader("🗑️ حذف كمية من صنف")
     if not df.empty:
         with st.form("delete_form"):
-            prod_to_delete = st.selectbox("اختر الصنف المراد حذفه", df["المنتج"].unique())
-            delete_button = st.form_submit_button("حذف الصنف")
+            prod_to_delete = st.selectbox("اختر الصنف المراد الحذف منه", df["المنتج"].unique())
+            qty_to_delete = st.number_input("عدد القطع المراد حذفها", min_value=1)
+
+            delete_button = st.form_submit_button("تنفيذ الحذف")
 
             if delete_button:
-                df = df[df["المنتج"] != prod_to_delete]
-                df.to_excel(FILE_NAME, index=False)
-                st.success(f"تم حذف الصنف '{prod_to_delete}' بنجاح!")
+                idx = df[df["المنتج"] == prod_to_delete].index[0]
+                current_qty = df.at[idx, "الكمية"]
+
+                if current_qty > qty_to_delete:
+                    df.at[idx, "الكمية"] -= qty_to_delete
+                    df.to_excel(FILE_NAME, index=False)
+                    st.success(f"تم حذف {qty_to_delete} قطعة من الصنف '{prod_to_delete}' بنجاح!")
+                elif current_qty == qty_to_delete:
+                    df = df[df["المنتج"] != prod_to_delete]
+                    df.to_excel(FILE_NAME, index=False)
+                    st.success(f"تم حذف كل الكمية الخاصة بالصنف '{prod_to_delete}' وتم إزالة الصنف بالكامل!")
+                else:
+                    st.error("الكمية المطلوب حذفها أكبر من الكمية الموجودة في المخزن!")
     else:
         st.warning("لا توجد بضاعة في المخزن لحذفها.")
